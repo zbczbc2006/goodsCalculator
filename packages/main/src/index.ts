@@ -1,40 +1,53 @@
-import {app, BrowserWindow, shell} from 'electron';
-import {join} from 'path';
-import {URL} from 'url';
+import { app, BrowserWindow, dialog, Menu, MenuItem, ipcMain } from 'electron'
+import { join } from 'path'
+import { URL } from 'url'
+import Store from 'electron-store'
+import robot from 'robotjs'
+const store = new Store()
+import type { GoodsTypes} from './importXls';
+import { updateGoods } from './importXls'
 
-
-const isSingleInstance = app.requestSingleInstanceLock();
-const isDevelopment = import.meta.env.MODE === 'development';
+const isSingleInstance = app.requestSingleInstanceLock()
+const isDevelopment = import.meta.env.MODE === 'development'
 
 if (!isSingleInstance) {
-  app.quit();
-  process.exit(0);
+  app.quit()
+  process.exit(0)
 }
 
-app.disableHardwareAcceleration();
+app.disableHardwareAcceleration()
 
 // Install "Vue.js devtools"
 if (isDevelopment) {
-  app.whenReady()
+  app
+    .whenReady()
     .then(() => import('electron-devtools-installer'))
-    .then(({default: installExtension, VUEJS3_DEVTOOLS}) => installExtension(VUEJS3_DEVTOOLS, {
-      loadExtensionOptions: {
-        allowFileAccess: true,
-      },
-    }))
-    .catch(e => console.error('Failed install extension:', e));
+    .then(({ default: installExtension, VUEJS3_DEVTOOLS }) =>
+      installExtension(VUEJS3_DEVTOOLS, {
+        loadExtensionOptions: {
+          allowFileAccess: true,
+        },
+      }),
+    )
+    .catch(e => console.error('Failed install extension:', e))
 }
 
-let mainWindow: BrowserWindow | null = null;
+let mainWindow: BrowserWindow
 
 const createWindow = async () => {
   mainWindow = new BrowserWindow({
+    alwaysOnTop: true,
+    // movable: false,
+    // maximizable: false,
+    x: 0,
+    y: 0,
+    height: 600,
+    width: 800,
     show: false, // Use 'ready-to-show' event to show window
     webPreferences: {
-      nativeWindowOpen: true,
       preload: join(__dirname, '../../preload/dist/index.cjs'),
     },
-  });
+  })
 
   /**
    * If you install `show: true` then it can cause issues when trying to close the window.
@@ -43,100 +56,135 @@ const createWindow = async () => {
    * @see https://github.com/electron/electron/issues/25012
    */
   mainWindow.on('ready-to-show', () => {
-    mainWindow?.show();
+    mainWindow.show()
+  })
 
-    if (isDevelopment) {
-      mainWindow?.webContents.openDevTools();
-    }
-  });
+  let isOpenDevTools = false
+  function toggleDevTools() {
+    isOpenDevTools = !isOpenDevTools
+    isOpenDevTools ? mainWindow.webContents.openDevTools() : mainWindow.webContents.closeDevTools()
+  }
+  function setConfig() {
+    mainWindow.webContents.send('config')
+  }
+  function openFile(type?: GoodsTypes) {
+    dialog
+      .showOpenDialog(mainWindow, {
+        title: '选择要导入的商品文件',
+        properties: ['openFile'],
+        filters: [{ name: 'Excel文件', extensions: ['xls', 'xlsx'] }],
+      })
+      .then(result => {
+        if (!result.canceled) {
+          updateGoods(result.filePaths[0], type)
+          mainWindow.webContents.send('updated')
+        }
+      })
+  }
+
+  const menu = new Menu()
+  menu.append(
+    new MenuItem({
+      label: '工具',
+      submenu: [
+        {
+          label: '设置',
+          click: setConfig,
+        },
+        {
+          accelerator: 'F12',
+          label: '切换控制台',
+          click: toggleDevTools,
+        },
+      ],
+    }),
+  )
+  menu.append(
+    new MenuItem({
+      label: '导入商品',
+      submenu: [
+        // {
+        //   label: '导入卷烟商品',
+        //   click: () => {
+        //     openFile(GoodsTypes.Cigarette)
+        //   },
+        // },
+        // {
+        //   label: '导入普通商品',
+        //   click: () => {
+        //     openFile(GoodsTypes.Normal)
+        //   },
+        // },
+        {
+          label: '更新全部商品',
+          click: () => {
+            openFile()
+          },
+        },
+      ],
+    }),
+  )
+
+  Menu.setApplicationMenu(menu)
+
+  ipcMain.on('sellGoods', (e, codeList: string[]) => {
+    const config = store.get('config') as any
+    robot.moveMouse(config.codeInput.x, config.codeInput.y)
+    robot.mouseClick()
+    codeList.forEach(async code => {
+      robot.typeStringDelayed(code + '\n', 5000)
+      robot.keyTap('enter');
+    })
+    robot.moveMouse(config.alipayBtn.x, config.alipayBtn.y)
+    setTimeout(() => {
+      robot.mouseClick()
+    }, 200)
+  })
 
   /**
    * URL for main window.
    * Vite dev server for development.
    * `file://../renderer/index.html` for production and test
    */
-  const pageUrl = isDevelopment && import.meta.env.VITE_DEV_SERVER_URL !== undefined
-    ? import.meta.env.VITE_DEV_SERVER_URL
-    : new URL('../renderer/dist/index.html', 'file://' + __dirname).toString();
+  const pageUrl =
+    isDevelopment && import.meta.env.VITE_DEV_SERVER_URL !== undefined
+      ? import.meta.env.VITE_DEV_SERVER_URL
+      : new URL('../renderer/dist/index.html', 'file://' + __dirname).toString()
 
+  await mainWindow.loadURL(pageUrl)
+}
 
-  await mainWindow.loadURL(pageUrl);
-};
-
- app.on('web-contents-created', (_event, contents) => {
-
-  /**
-   * Block navigation to origins not on the allowlist.
-   *
-   * Navigation is a common attack vector. If an attacker can convince the app to navigate away
-   * from its current page, they can possibly force the app to open web sites on the Internet.
-   *
-   * @see https://www.electronjs.org/docs/latest/tutorial/security#13-disable-or-limit-navigation
-   */
-  contents.on('will-navigate', (event, url) => {
-    const allowedOrigins : ReadonlySet<string> =
-      new Set<`https://${string}`>(); // Do not use insecure protocols like HTTP. https://www.electronjs.org/docs/latest/tutorial/security#1-only-load-secure-content
-    const { origin, hostname } = new URL(url);
-    const isDevLocalhost = isDevelopment && hostname === 'localhost'; // permit live reload of index.html
-    if (!allowedOrigins.has(origin) && !isDevLocalhost){
-      console.warn('Blocked navigating to an unallowed origin:', origin);
-      event.preventDefault();
-    }
-  });
-
-  /**
-  * Hyperlinks to allowed sites open in the default browser.
-  *
-  * The creation of new `webContents` is a common attack vector. Attackers attempt to convince the app to create new windows,
-  * frames, or other renderer processes with more privileges than they had before; or with pages opened that they couldn't open before.
-  * You should deny any unexpected window creation.
-  *
-  * @see https://www.electronjs.org/docs/latest/tutorial/security#14-disable-or-limit-creation-of-new-windows
-  * @see https://www.electronjs.org/docs/latest/tutorial/security#15-do-not-use-openexternal-with-untrusted-content
-  */
-  contents.setWindowOpenHandler(({ url }) => {
-    const allowedOrigins : ReadonlySet<string> =
-      new Set<`https://${string}`>([ // Do not use insecure protocols like HTTP. https://www.electronjs.org/docs/latest/tutorial/security#1-only-load-secure-content
-      'https://vitejs.dev',
-      'https://github.com',
-      'https://v3.vuejs.org']);
-    const { origin } = new URL(url);
-    if (allowedOrigins.has(origin)){
-      shell.openExternal(url);
-    } else {
-      console.warn('Blocked the opening of an unallowed origin:', origin);
-    }
-    return { action: 'deny' };
-  });
-});
-
+app.on('browser-window-blur', (event, window) => {
+  window.setOpacity(0.7)
+})
+app.on('browser-window-focus', (event, window) => {
+  window.setOpacity(1)
+})
 
 app.on('second-instance', () => {
   // Someone tried to run a second instance, we should focus our window.
   if (mainWindow) {
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    mainWindow.focus();
+    if (mainWindow.isMinimized()) mainWindow.restore()
+    mainWindow.focus()
   }
-});
-
+})
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
-    app.quit();
+    app.quit()
   }
-});
+})
 
-
-app.whenReady()
+app
+  .whenReady()
   .then(createWindow)
-  .catch((e) => console.error('Failed create window:', e));
-
+  .catch(e => console.error('Failed create window:', e))
 
 // Auto-updates
 if (import.meta.env.PROD) {
-  app.whenReady()
+  app
+    .whenReady()
     .then(() => import('electron-updater'))
-    .then(({autoUpdater}) => autoUpdater.checkForUpdatesAndNotify())
-    .catch((e) => console.error('Failed check updates:', e));
+    .then(({ autoUpdater }) => autoUpdater.checkForUpdatesAndNotify())
+    .catch(e => console.error('Failed check updates:', e))
 }
-

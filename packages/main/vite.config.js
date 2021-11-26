@@ -32,6 +32,7 @@ const config = {
       external: [
         'electron',
         'electron-devtools-installer',
+        'robotjs',
         ...builtinModules,
       ],
       output: {

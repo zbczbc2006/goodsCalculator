@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-console */
 const {build} = require('vite');
 const {dirname} = require('path');
 

@@ -1,5 +1,8 @@
 {
-  "name": "vite-electron-builder",
+  "name": "goods-calculator",
+  "author": "zbczbc2006",
+  "description": "商品计算器",
+  "version": "1.0.0",
   "private": true,
   "engines": {
     "node": ">=v16.13",
@@ -13,7 +16,7 @@
     "pretest": "npm run build",
     "test": "node tests/app.spec.js",
     "watch": "node scripts/watch.js",
-    "lint": "eslint . --ext js,ts,vue",
+    "lint": "eslint . --ext js,ts,vue --fix",
     "typecheck-main": "tsc --noEmit -p packages/main/tsconfig.json",
     "typecheck-preload": "tsc --noEmit -p packages/preload/tsconfig.json",
     "typecheck-renderer": "vue-tsc --noEmit -p packages/renderer/tsconfig.json",
@@ -35,13 +38,14 @@
     "@typescript-eslint/eslint-plugin": "5.4.0",
     "@vitejs/plugin-vue": "1.10.0",
     "cross-env": "7.0.3",
+    "dts-for-context-bridge": "0.1.0",
     "electron": "16.0.2",
     "electron-builder": "22.14.5",
-    "dts-for-context-bridge": "0.1.0",
     "electron-devtools-installer": "3.2.0",
     "eslint": "8.3.0",
     "eslint-plugin-vue": "8.1.1",
     "lint-staged": "12.1.2",
+    "naive-ui": "^2.21.1",
     "playwright": "1.16.3",
     "simple-git-hooks": "2.7.0",
     "typescript": "4.5.2",
@@ -49,8 +53,11 @@
     "vue-tsc": "0.29.6"
   },
   "dependencies": {
+    "electron-store": "^8.0.1",
     "electron-updater": "4.6.2",
-    "vue": "3.2.22",
-    "vue-router": "4.0.12"
+    "lodash-es": "^4.17.21",
+    "node-xlsx": "^0.17.2",
+    "robotjs": "^0.6.0",
+    "vue": "3.2.22"
   }
 }
