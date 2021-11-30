@@ -1,73 +1,73 @@
 <template>
-  <NDrawer
-    v-model:show="showCfg"
-    placement="top"
-    height="auto"
-    :mask-closable="false"
+  <ElDrawer
+    v-model="showCfg"
+    direction="ttb"
+    custom-class="cfg-drawer"
+    :close-on-click-modal="false"
+    :close-on-press-escape="false"
+    :show-close="false"
+    title="设置项"
   >
-    <NDrawerContent title="设置项">
-      <div class="cfg-item">
-        <span class="item-label">商品码输入框坐标</span>
-        <span class="item-value">
-          <NInputGroup>
-            <NInputNumber v-model:value="config.codeInput.x" placeholder="x" :min="0" />
-            <NInputNumber v-model:value="config.codeInput.y" placeholder="y" :min="0" />
-          </NInputGroup>
-        </span>
-      </div>
-      <div class="cfg-item">
-        <span class="item-label">支付宝按钮坐标</span>
-        <span class="item-value">
-          <NInputGroup>
-            <NInputNumber v-model:value="config.alipayBtn.x" placeholder="x" :min="0" />
-            <NInputNumber v-model:value="config.alipayBtn.y" placeholder="y" :min="0" />
-          </NInputGroup>
-        </span>
-      </div>
-      <div class="cfg-item">
-        <span class="item-label">自动扣减库存</span>
-        <span class="item-value">
-          <NSwitch v-model:value="config.autoInventory" />
-        </span>
-      </div>
-      <div v-if="!config.autoInventory" class="cfg-item">
-        <span class="item-label">提示扣减库存</span>
-        <span class="item-value">
-          <NSwitch v-model:value="config.hintInventory" />
-        </span>
-      </div>
-      <div class="cfg-item">
-        <span class="item-label">显示低价商品列表</span>
-        <span class="item-value">
-          <NSwitch v-model:value="config.showList" />
-        </span>
-      </div>
-      <div v-if="config.showList" class="cfg-item">
-        <span class="item-label">低价价格阈值</span>
-        <span class="item-value">
-          <NInputNumber v-model:value="config.priceLimit" :min="1">
-            <template #prefix>￥</template>
-          </NInputNumber>
-        </span>
-      </div>
-      <div class="operate">
-        <NButton class="operate-btn" type="primary" @click="onConfigSure">确定</NButton>
-        <NButton class="operate-btn" @click="onConfigCancel">取消</NButton>
-      </div>
-    </NDrawerContent>
-  </NDrawer>
+    <div class="cfg-item">
+      <span class="item-label">商品码输入框坐标</span>
+      <span class="item-value">
+        <ElInputNumber v-model="config.codeInput.x" placeholder="x" :min="0" />
+        <ElInputNumber v-model="config.codeInput.y" placeholder="y" :min="0" />
+      </span>
+    </div>
+    <div class="cfg-item">
+      <span class="item-label">支付宝按钮坐标</span>
+      <span class="item-value">
+        <ElInputNumber v-model="config.alipayBtn.x" placeholder="x" :min="0" />
+        <ElInputNumber v-model="config.alipayBtn.y" placeholder="y" :min="0" />
+      </span>
+    </div>
+    <div class="cfg-item">
+      <span class="item-label">自动扣减库存</span>
+      <span class="item-value">
+        <ElSwitch v-model="config.autoInventory" />
+      </span>
+    </div>
+    <div v-if="!config.autoInventory" class="cfg-item">
+      <span class="item-label">提示扣减库存</span>
+      <span class="item-value">
+        <ElSwitch v-model="config.hintInventory" />
+      </span>
+    </div>
+    <div class="cfg-item">
+      <span class="item-label">显示低价商品列表</span>
+      <span class="item-value">
+        <ElSwitch v-model="config.showList" />
+      </span>
+    </div>
+    <div v-if="config.showList" class="cfg-item">
+      <span class="item-label">低价价格阈值</span>
+      <span class="item-value">
+        <ElInputNumber v-model="config.priceLimit" :min="1" />
+      </span>
+    </div>
+    <div class="operate">
+      <ElButton
+        class="operate-btn"
+        size="small"
+        type="primary"
+        @click="onConfigSure"
+      >
+        确定
+      </ElButton>
+      <ElButton class="operate-btn" size="small" @click="onConfigCancel">取消</ElButton>
+    </div>
+  </ElDrawer>
   <div class="main">
-    <h3>输入价格</h3>
-    <NInputNumber
-      v-model:value="price"
+    <h3>总价</h3>
+    <ElInput
+      v-model.number="price"
       class="price-input"
-      placeholder="按回车生效"
-      :min="1"
-      size="large"
+      placeholder="点击此处输入总价"
       @keyup.enter="selectGoodes"
     >
-      <template #prefix>￥</template>
-    </NInputNumber>
+      <template #prepend>￥</template>
+    </ElInput>
     <div v-if="config.showList" class="goods-content">
       <h3>低价商品列表</h3>
       <ul class="goods-list">
@@ -84,30 +84,32 @@
       </ul>
     </div>
   </div>
-  <n-modal v-model:show="showDialog" preset="dialog">
+  <ElDialog v-model="showDialog">
     <div>商品信息已发送，是否扣减库存？</div>
     <template #action>
-      <NButton type="primary" @click="onInventorySure">是</NButton>
-      <NButton @click="showDialog = false">否</NButton>
+      <ElButton type="primary" @click="onInventorySure">是</ElButton>
+      <ElButton @click="showDialog = false">否</ElButton>
     </template>
-  </n-modal>
+  </ElDialog>
 </template>
 
 <script lang="ts" setup>
+import type { Ref } from 'vue'
 import { computed, reactive, ref, toRaw } from 'vue'
 import type { Goods } from './utils'
 import { sortGoodes, getSellGoods } from './utils'
 import {
-  NButton,
-  NSwitch,
-  NInputNumber,
-  NInputGroup,
-  NDrawer,
-  NDrawerContent,
-  NModal,
-} from 'naive-ui'
+  ElButton,
+  ElSwitch,
+  ElInputNumber,
+  ElInput,
+  ElDrawer,
+  ElDialog,
+  ElMessage,
+  ElMessageBox,
+} from 'element-plus'
 const preloadApi = window.preloadApi
-const price = ref()
+const price = ref('') as Ref<string | number>
 const config = reactive({
   codeInput: {
     x: 0,
@@ -133,6 +135,7 @@ const goodsSHowList = computed(() =>
 )
 
 preloadApi.on('updated', () => {
+  ElMessage.success('更新成功！')
   allGoodsObj.value = preloadApi.getGoods()
 })
 preloadApi.on('config', () => {
@@ -154,15 +157,25 @@ let sellGoods: Goods[] = []
  * 计算卖出的商品
  * @returns {any}
  */
-const selectGoodes = function () {
-  if (!price.value || price.value < 2) {
-    price.value = ''
-    alert('价格不对，请重新输入！')
-    return
+const selectGoodes = async function () {
+  const totalPrice = +price.value
+  if (totalPrice > 999) {
+    await ElMessageBox.confirm('当前金额较大，确认没错？', {
+      confirmButtonText: '没有错',
+      cancelButtonText: '输错了，重新输入',
+      customClass: 'confirm-box',
+      confirmButtonClass: 'confirm-btn',
+      closeOnClickModal: false,
+    })
   }
-  sellGoods = getSellGoods(price.value, goodsList.value)
-  const codeList = sellGoods.map(n => n.code)
-  sendGoods(codeList)
+  if (totalPrice >= 2) {
+    sellGoods = getSellGoods(totalPrice, goodsList.value)
+    const codeList = sellGoods.map(n => n.code)
+    sendGoods(codeList)
+  } else {
+    ElMessage.error('价格不对，请重新输入！')
+  }
+  price.value = ''
 }
 
 /**
@@ -211,6 +224,10 @@ function onInventorySure() {
   color: #2c3e50;
   margin: 60px 20px 0;
 }
+.cfg-drawer {
+  overflow: auto;
+  height: auto !important;
+}
 .cfg-item {
   display: flex;
   margin-bottom: 12px;
@@ -228,14 +245,16 @@ function onInventorySure() {
   width: 80px;
   margin: 0 20px;
 }
-.price-input .n-input {
-  --font-size: 45px !important;
+.price-input {
+  width: 100%;
+  line-height: 48px;
 }
-.price-input .n-button {
-  --icon-size: 45px !important;
+.price-input input {
+  font-size: 36px;
+  height: 50px;
 }
 .goods-content {
-  margin-top: 160px;
+  margin-top: 60px;
 }
 .goods-list {
   list-style: none;
@@ -250,5 +269,20 @@ function onInventorySure() {
   cursor: pointer;
   border: 1px solid lightblue;
   border-radius: 2px;
+}
+.confirm-box {
+  --el-messagebox-content-font-size: 24px;
+}
+.confirm-box .el-button {
+  font-size: 18px;
+}
+.confirm-btn {
+  --el-button-bg-color: #409eff;
+  --el-button-border-color: #409eff;
+  --el-button-hover-bg-color: rgb(102, 177, 255);
+  --el-button-hover-border-color: rgb(102, 177, 255);
+  --el-button-active-bg-color: rgb(58, 142, 230);
+  --el-button-active-border-color: rgb(58, 142, 230);
+  --el-button-hover-text-color: white;
 }
 </style>

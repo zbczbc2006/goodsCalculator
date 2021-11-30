@@ -1,6 +1,7 @@
 /* eslint-env node */
 
 import { chrome } from '../../electron-vendors.config.json'
+import ElementPlus from 'unplugin-element-plus/vite'
 import { join } from 'path'
 import { builtinModules } from 'module'
 import vue from '@vitejs/plugin-vue'
@@ -19,7 +20,7 @@ const config = {
       '/@/': join(PACKAGE_ROOT, 'src') + '/',
     },
   },
-  plugins: [vue()],
+  plugins: [vue(), ElementPlus()],
   base: '',
   server: {
     fs: {

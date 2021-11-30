@@ -3,9 +3,9 @@ import { join } from 'path'
 import { URL } from 'url'
 import Store from 'electron-store'
 import robot from 'robotjs'
+import { GoodsTypes} from './importCsv';
+import { updateGoods } from './importCsv'
 const store = new Store()
-import type { GoodsTypes} from './importXls';
-import { updateGoods } from './importXls'
 
 const isSingleInstance = app.requestSingleInstanceLock()
 const isDevelopment = import.meta.env.MODE === 'development'
@@ -41,8 +41,8 @@ const createWindow = async () => {
     // maximizable: false,
     x: 0,
     y: 0,
-    height: 600,
-    width: 800,
+    height: 300,
+    width: 447,
     show: false, // Use 'ready-to-show' event to show window
     webPreferences: {
       preload: join(__dirname, '../../preload/dist/index.cjs'),
@@ -72,7 +72,7 @@ const createWindow = async () => {
       .showOpenDialog(mainWindow, {
         title: '选择要导入的商品文件',
         properties: ['openFile'],
-        filters: [{ name: 'Excel文件', extensions: ['xls', 'xlsx'] }],
+        filters: [{ name: 'Excel文件', extensions: ['csv'] }],
       })
       .then(result => {
         if (!result.canceled) {
@@ -103,18 +103,18 @@ const createWindow = async () => {
     new MenuItem({
       label: '导入商品',
       submenu: [
-        // {
-        //   label: '导入卷烟商品',
-        //   click: () => {
-        //     openFile(GoodsTypes.Cigarette)
-        //   },
-        // },
-        // {
-        //   label: '导入普通商品',
-        //   click: () => {
-        //     openFile(GoodsTypes.Normal)
-        //   },
-        // },
+        {
+          label: '导入卷烟商品',
+          click: () => {
+            openFile(GoodsTypes.Cigarette)
+          },
+        },
+        {
+          label: '导入普通商品',
+          click: () => {
+            openFile(GoodsTypes.Normal)
+          },
+        },
         {
           label: '更新全部商品',
           click: () => {
@@ -129,6 +129,7 @@ const createWindow = async () => {
 
   ipcMain.on('sellGoods', (e, codeList: string[]) => {
     const config = store.get('config') as any
+    const curr =  robot.getMousePos()
     robot.moveMouse(config.codeInput.x, config.codeInput.y)
     robot.mouseClick()
     codeList.forEach(async code => {
@@ -138,6 +139,7 @@ const createWindow = async () => {
     robot.moveMouse(config.alipayBtn.x, config.alipayBtn.y)
     setTimeout(() => {
       robot.mouseClick()
+      robot.moveMouse(curr.x, curr.y)
     }, 200)
   })
 

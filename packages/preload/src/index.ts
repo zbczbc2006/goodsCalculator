@@ -10,6 +10,28 @@ const api = {
   versions: process.versions,
 } as const
 
+function initStore() {
+  if (!store.get('goods')) {
+    store.set('goods', {})
+  }
+  if (!store.get('config')) {
+    store.set('config', {
+      codeInput: {
+        x: 1350,
+        y: 165,
+      },
+      alipayBtn: {
+        x: 1350,
+        y: 435,
+      },
+      autoInventory: false,
+      hintInventory: false,
+      showList: false,
+      priceLimit: 5,
+    })
+  }
+}
+initStore()
 /**
  * The "Main World" is the JavaScript context that your main renderer code runs in.
  * By default, the page you load in your renderer executes code in this world.
