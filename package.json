@@ -2,7 +2,7 @@
   "name": "goods-calculator",
   "author": "zbczbc2006",
   "description": "商品计算器",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "engines": {
     "node": ">=v16.13",
