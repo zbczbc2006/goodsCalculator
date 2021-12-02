@@ -20,10 +20,10 @@ export function updateGoods(path: string, type: GoodsTypes = GoodsTypes.None) {
   const fileStr = iconv.decode(fs.readFileSync(path), 'GB2312')
   const { data } = Papa.parse(fileStr, {
     header: true,
-  })
+  }) as { data: any[] }
   const goods = {} as any
   data
-    .filters((n: any) => n['商品条码'].trim() && +n['零售价'])
+    .filter((n: any) => n['商品条码'].trim() && +n['零售价'])
     .forEach((n: any) => {
       const code = n['商品条码'].trim()
       goods[code] = {

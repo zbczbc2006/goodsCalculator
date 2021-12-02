@@ -133,12 +133,11 @@ const createWindow = async () => {
     robot.moveMouse(config.codeInput.x, config.codeInput.y)
     robot.mouseClick()
     codeList.forEach(async code => {
-      robot.typeStringDelayed(code + '\n', 5000)
+      robot.typeStringDelayed(code, 5e3)
       robot.keyTap('enter');
     })
-    robot.moveMouse(config.alipayBtn.x, config.alipayBtn.y)
+    robot.keyTap('enter');
     setTimeout(() => {
-      robot.mouseClick()
       robot.moveMouse(curr.x, curr.y)
     }, 200)
   })

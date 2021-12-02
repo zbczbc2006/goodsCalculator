@@ -16,13 +16,6 @@
       </span>
     </div>
     <div class="cfg-item">
-      <span class="item-label">支付宝按钮坐标</span>
-      <span class="item-value">
-        <ElInputNumber v-model="config.alipayBtn.x" placeholder="x" :min="0" />
-        <ElInputNumber v-model="config.alipayBtn.y" placeholder="y" :min="0" />
-      </span>
-    </div>
-    <div class="cfg-item">
       <span class="item-label">自动扣减库存</span>
       <span class="item-value">
         <ElSwitch v-model="config.autoInventory" />
@@ -112,10 +105,6 @@ const preloadApi = window.preloadApi
 const price = ref('') as Ref<string | number>
 const config = reactive({
   codeInput: {
-    x: 0,
-    y: 0,
-  },
-  alipayBtn: {
     x: 0,
     y: 0,
   },
