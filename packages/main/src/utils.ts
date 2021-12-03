@@ -1,4 +1,3 @@
-import Store from 'electron-store'
 import fs from 'fs'
 import iconv from 'iconv-lite'
 import Papa from 'papaparse'
@@ -9,14 +8,12 @@ export const enum GoodsTypes {
   Normal = 'normal',
 }
 
-const store = new Store()
-
 /**
- * 更新商品
+ * 导入商品
  * @param {string} path
  * @param {GoodsTypes} type
  */
-export function updateGoods(path: string, type: GoodsTypes = GoodsTypes.None) {
+export function importGoods(path: string, type: GoodsTypes = GoodsTypes.None) {
   const fileStr = iconv.decode(fs.readFileSync(path), 'GB2312')
   const { data } = Papa.parse(fileStr, {
     header: true,
@@ -34,5 +31,5 @@ export function updateGoods(path: string, type: GoodsTypes = GoodsTypes.None) {
         type,
       }
     })
-  store.set('goods', goods)
+  return goods
 }

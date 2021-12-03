@@ -3,9 +3,27 @@ import { join } from 'path'
 import { URL } from 'url'
 import Store from 'electron-store'
 import robot from 'robotjs'
-import { GoodsTypes} from './importCsv';
-import { updateGoods } from './importCsv'
+import { GoodsTypes, importGoods } from './utils'
 const store = new Store()
+
+function initStore() {
+  if (!store.get('goods')) {
+    store.set('goods', {})
+  }
+  if (!store.get('config')) {
+    store.set('config', {
+      codeInput: {
+        x: 1350,
+        y: 165,
+      },
+      autoInventory: false,
+      hintInventory: false,
+      showList: false,
+      priceLimit: 5,
+    })
+  }
+}
+initStore()
 
 const isSingleInstance = app.requestSingleInstanceLock()
 const isDevelopment = import.meta.env.MODE === 'development'
@@ -76,7 +94,8 @@ const createWindow = async () => {
       })
       .then(result => {
         if (!result.canceled) {
-          updateGoods(result.filePaths[0], type)
+          const goods = importGoods(result.filePaths[0], type)
+          store.set('goods', goods)
           mainWindow.webContents.send('updated')
         }
       })
@@ -101,8 +120,15 @@ const createWindow = async () => {
   )
   menu.append(
     new MenuItem({
-      label: '导入商品',
+      label: '商品管理',
       submenu: [
+        {
+          label: '清空商品',
+          click: () => {
+            store.set('goods', {})
+            mainWindow.webContents.send('updated')
+          },
+        },
         {
           label: '导入卷烟商品',
           click: () => {
@@ -129,14 +155,14 @@ const createWindow = async () => {
 
   ipcMain.on('sellGoods', (e, codeList: string[]) => {
     const config = store.get('config') as any
-    const curr =  robot.getMousePos()
+    const curr = robot.getMousePos()
     robot.moveMouse(config.codeInput.x, config.codeInput.y)
     robot.mouseClick()
     codeList.forEach(async code => {
       robot.typeStringDelayed(code, 5e3)
-      robot.keyTap('enter');
+      robot.keyTap('enter')
     })
-    robot.keyTap('enter');
+    robot.keyTap('enter')
     setTimeout(() => {
       robot.moveMouse(curr.x, curr.y)
     }, 200)
