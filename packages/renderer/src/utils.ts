@@ -6,6 +6,16 @@ export interface Goods {
       inventory: number,
       type: string,
 }
+export interface Config {
+  codeInput: {
+    x: number,
+    y: number,
+  },
+  autoInventory: boolean,
+  hintInventory: boolean,
+  showList: boolean,
+  priceLimit: number,
+}
 export function sortGoodes (goodsList: Goods[]) {
   return goodsList.filter(n => n.inventory).sort((a, b) => a.price !== b.price ? b.price - a.price : b.inventory - a.inventory)
 }
@@ -22,4 +32,19 @@ export function getSellGoods (price: number, goodsList: Goods[]) {
     }
   }
   return sellGoods
+}
+export function getInitUser () {
+  return {
+    config: {
+      codeInput: {
+        x: 1350,
+        y: 165,
+      },
+      autoInventory: false,
+      hintInventory: false,
+      showList: false,
+      priceLimit: 5,
+    },
+    goods: {},
+  }
 }

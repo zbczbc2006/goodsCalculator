@@ -7,19 +7,36 @@ import { GoodsTypes, importGoods } from './utils'
 const store = new Store()
 
 function initStore() {
-  if (!store.get('goods')) {
-    store.set('goods', {})
-  }
-  if (!store.get('config')) {
-    store.set('config', {
-      codeInput: {
-        x: 1350,
-        y: 165,
+  if (store.has('goods')) {
+    // 老版本
+    const config = store.get('config')
+    const goods = store.get('goods')
+    store.set('userName', '默认账户')
+    store.set('userMap', {
+      默认账户: {
+        config,
+        goods,
       },
-      autoInventory: false,
-      hintInventory: false,
-      showList: false,
-      priceLimit: 5,
+    })
+    store.delete('config')
+    store.delete('goods')
+  } else if (!store.has('userMap')) {
+    // 新用户
+    store.set('userName', '默认账户')
+    store.set('userMap', {
+      默认账户: {
+        config: {
+          codeInput: {
+            x: 1350,
+            y: 165,
+          },
+          autoInventory: false,
+          hintInventory: false,
+          showList: false,
+          priceLimit: 5,
+        },
+        goods: {},
+      },
     })
   }
 }
@@ -82,9 +99,6 @@ const createWindow = async () => {
     isOpenDevTools = !isOpenDevTools
     isOpenDevTools ? mainWindow.webContents.openDevTools() : mainWindow.webContents.closeDevTools()
   }
-  function setConfig() {
-    mainWindow.webContents.send('config')
-  }
   function openFile(type?: GoodsTypes) {
     dialog
       .showOpenDialog(mainWindow, {
@@ -108,7 +122,9 @@ const createWindow = async () => {
       submenu: [
         {
           label: '设置',
-          click: setConfig,
+          click() {
+            mainWindow.webContents.send('config')
+          },
         },
         {
           accelerator: 'F12',
@@ -150,11 +166,21 @@ const createWindow = async () => {
       ],
     }),
   )
+  menu.append(
+    new MenuItem({
+      label: '账户管理',
+      click() {
+        mainWindow.webContents.send('user')
+      },
+    }),
+  )
 
   Menu.setApplicationMenu(menu)
 
   ipcMain.on('sellGoods', (e, codeList: string[]) => {
-    const config = store.get('config') as any
+    const name = store.get('userName')
+    const configKey = `userMap.${name}.config`
+    const config = store.get(configKey) as any
     const curr = robot.getMousePos()
     robot.moveMouse(config.codeInput.x, config.codeInput.y)
     robot.mouseClick()
@@ -166,6 +192,9 @@ const createWindow = async () => {
     setTimeout(() => {
       robot.moveMouse(curr.x, curr.y)
     }, 200)
+  })
+  ipcMain.on('relaunch', () => {
+    app.relaunch()
   })
 
   /**

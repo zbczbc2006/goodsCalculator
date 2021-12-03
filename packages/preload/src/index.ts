@@ -9,6 +9,9 @@ const apiKey = 'electron'
 const api = {
   versions: process.versions,
 } as const
+const name = store.get('userName')
+const goodsKey = `userMap.${name}.goods`
+const configKey = `userMap.${name}.config`
 /**
  * The "Main World" is the JavaScript context that your main renderer code runs in.
  * By default, the page you load in your renderer executes code in this world.
@@ -18,16 +21,25 @@ const api = {
 contextBridge.exposeInMainWorld(apiKey, api)
 contextBridge.exposeInMainWorld('preloadApi', {
   getGoods() {
-    return store.get('goods')
+    return store.get(goodsKey)
   },
   setGoods(goods: any) {
-    store.set('goods', merge(store.get('goods'), goods))
+    store.set(goodsKey, merge(store.get(goodsKey), goods))
+  },
+  getConfig() {
+    return store.get(configKey)
+  },
+  setConfig(config: any) {
+    store.set(configKey, merge(store.get(configKey), config))
   },
   getStore(label: string) {
     return store.get(label)
   },
   setStore(label: string, value: any) {
     return store.set(label, value)
+  },
+  deleteStore(label: string) {
+    return store.delete(label)
   },
   send: (channel: string, data: any) => {
     ipcRenderer.send(channel, data)

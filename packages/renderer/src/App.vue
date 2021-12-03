@@ -1,56 +1,4 @@
 <template>
-  <ElDrawer
-    v-model="showCfg"
-    direction="ttb"
-    custom-class="cfg-drawer"
-    :close-on-click-modal="false"
-    :close-on-press-escape="false"
-    :show-close="false"
-    title="设置项"
-  >
-    <div class="cfg-item">
-      <span class="item-label">商品码输入框坐标</span>
-      <span class="item-value">
-        <ElInputNumber v-model="config.codeInput.x" placeholder="x" :min="0" />
-        <ElInputNumber v-model="config.codeInput.y" placeholder="y" :min="0" />
-      </span>
-    </div>
-    <div class="cfg-item">
-      <span class="item-label">自动扣减库存</span>
-      <span class="item-value">
-        <ElSwitch v-model="config.autoInventory" />
-      </span>
-    </div>
-    <div v-if="!config.autoInventory" class="cfg-item">
-      <span class="item-label">提示扣减库存</span>
-      <span class="item-value">
-        <ElSwitch v-model="config.hintInventory" />
-      </span>
-    </div>
-    <div class="cfg-item">
-      <span class="item-label">显示低价商品列表</span>
-      <span class="item-value">
-        <ElSwitch v-model="config.showList" />
-      </span>
-    </div>
-    <div v-if="config.showList" class="cfg-item">
-      <span class="item-label">低价价格阈值</span>
-      <span class="item-value">
-        <ElInputNumber v-model="config.priceLimit" :min="1" />
-      </span>
-    </div>
-    <div class="operate">
-      <ElButton
-        class="operate-btn"
-        size="small"
-        type="primary"
-        @click="onConfigSure"
-      >
-        确定
-      </ElButton>
-      <ElButton class="operate-btn" size="small" @click="onConfigCancel">取消</ElButton>
-    </div>
-  </ElDrawer>
   <div class="main">
     <h3>总价</h3>
     <ElInput
@@ -84,62 +32,41 @@
       <ElButton @click="showDialog = false">否</ElButton>
     </template>
   </ElDialog>
+  <ConfigDrawer @config-change="onConfigChange" />
+  <UserDrawer />
 </template>
 
 <script lang="ts" setup>
 import type { Ref } from 'vue'
-import { computed, reactive, ref, toRaw } from 'vue'
-import type { Goods } from './utils'
+import { computed, reactive, ref } from 'vue'
+import ConfigDrawer from './components/ConfigDrawer.vue'
+import UserDrawer from './components/UserDrawer.vue'
+import type { Goods, Config } from './utils'
 import { sortGoodes, getSellGoods } from './utils'
 import {
   ElButton,
-  ElSwitch,
-  ElInputNumber,
   ElInput,
-  ElDrawer,
   ElDialog,
   ElMessage,
   ElMessageBox,
 } from 'element-plus'
 const preloadApi = window.preloadApi
 const price = ref('') as Ref<string | number>
-const config = reactive({
-  codeInput: {
-    x: 0,
-    y: 0,
-  },
-  autoInventory: false,
-  hintInventory: true,
-  showList: false,
-  priceLimit: 5,
-})
-const configBak = preloadApi.getStore('config')
-Object.assign(config, configBak)
-const showCfg = ref(false)
 
 const allGoodsObj = ref(preloadApi.getGoods()) // 商品库全部商品对象
 const goodsList = computed(() => sortGoodes(Object.values(allGoodsObj.value) as Goods[])) // 商品库全部商品列表，从大到小排列
+
+const config = reactive(preloadApi.getConfig() as Config)
+const onConfigChange = function(cfg: Config) {
+  Object.assign(config, cfg)
+}
 const goodsSHowList = computed(() =>
   goodsList.value.filter(n => n.price <= config.priceLimit).reverse(),
 )
-
 preloadApi.on('updated', () => {
   ElMessage.success('更新成功！')
   allGoodsObj.value = preloadApi.getGoods()
 })
-preloadApi.on('config', () => {
-  showCfg.value = true
-})
-
-function onConfigSure() {
-  preloadApi.setStore('config', toRaw(config))
-  showCfg.value = false
-  Object.assign(configBak, config)
-}
-function onConfigCancel() {
-  showCfg.value = false
-  Object.assign(config, configBak)
-}
 
 let sellGoods: Goods[] = []
 /**
@@ -212,6 +139,9 @@ function onInventorySure() {
   text-align: center;
   color: #2c3e50;
   margin: 60px 20px 0;
+}
+li {
+  list-style: none;
 }
 .cfg-drawer {
   overflow: auto;
